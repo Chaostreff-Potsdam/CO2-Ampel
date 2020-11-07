@@ -202,6 +202,7 @@ if (reset_reason == 0 or reset_reason == 6) then
   print("Warming up sensor...")
   tmr5:alarm(120000, tmr.ALARM_SINGLE, mhz19_attach_interrupt)
   tmr4:alarm(200, tmr.ALARM_AUTO, wemos_d1_toggle_led)
+  node.restart()
 else
   mhz19_attach_interrupt()
 end
