@@ -23,3 +23,7 @@ serial to usb converter.
  - LUA dump function for data structures from https://stackoverflow.com/a/27028488
  - Documentation on init.lua from https://nodemcu.readthedocs.io/en/master/en/upload/#initlua
  - A simple connected object with NodeMCU and MQTT tutorial on https://www.foobarflies.io/a-simple-connected-object-with-nodemcu-and-mqtt/
+
+# NodeMCU-Modules:
+adc,bme680,dht,enduser_setup,file,gpio,mqtt,net,node,sjson,softuart,tmr,uart,websocket,wifi,ws2812,ws2812_effects
+
