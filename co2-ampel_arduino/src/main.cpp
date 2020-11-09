@@ -126,7 +126,11 @@ void setup() {
 
   // interrupt pin for zero calibration
   pinMode(CONF_ZERO_CALIBRATION_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(CONF_ZERO_CALIBRATION_PIN), detectZerocCalibrationButtonPush, RISING);
+  attachInterrupt(
+    digitalPinToInterrupt(CONF_ZERO_CALIBRATION_PIN), 
+    detectZerocCalibrationButtonPush, 
+    RISING
+  );
 
   // WiFi
   Serial.printf("Setup: WiFi connecting to %s\n\r", WIFI_CONFIG_SSID);
@@ -218,7 +222,9 @@ void loop() {
       }
       // update neopixels every second
       if (now % 1000 == 0) {
-        loadingAnimation(map((now - zeroCalibrationStartTimeMS), 0, CONF_ZEREO_CALIBRATION_TIME_MS, 0, 100));
+        loadingAnimation(
+          map((now - zeroCalibrationStartTimeMS), 0, CONF_ZEREO_CALIBRATION_TIME_MS, 0, 100)
+        );
       }
     }
     // zero calibration is done -> measurement mode
@@ -250,7 +256,12 @@ void loop() {
         colorWipe(neoPixels.Color(  255, 0,   0), 200);
       }
 
-      String json = String("{ \"temperatur\": " + String(temperature, 0) + ", \"ppmCO2\": " + String(co2Value) + " }");
+      String json = String(
+        "{ \"temperatur\": " 
+        + String(temperature, 0) 
+        + ", \"ppmCO2\": " 
+        + String(co2Value) + " }"
+      );
       //Serial.println(json);
       String topic = String("/co2ampel/" + String(ESP.getChipId()));
       //Serial.println(topic);
