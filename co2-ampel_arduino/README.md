@@ -20,7 +20,7 @@ No fancy image here.
 - D1 Mini `D7` -> MH-Z19(B) `TX`
 - D1 Mini `D8` -> MH-Z19(B) `RX`
 - D1 Mini `D5` -> NeoPixel `Data`
-- Di Mini `D3` -> Button to `GND` 
+- D1 Mini `D3` -> Button to `GND` 
 
 ## Configuration
 
