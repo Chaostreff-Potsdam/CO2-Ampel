@@ -39,7 +39,7 @@
 
 // application configuration
 #define CONF_WARMUP_TIME_MS             180000  // 180s
-#define CONF_ZEREO_CALIBRATION_TIME_MS  1260000 // 21m
+#define CONF_ZERO_CALIBRATION_TIME_MS  1260000 // 21m
 #define CONF_MEASUREMENT_INTERVALL_MS   10000   // 10s
 #define CONF_ZERO_CALIBRATION_PIN       D3
 
@@ -81,7 +81,7 @@ static const char alphanum[] ="0123456789"
 bool sendZeroCalibrationCmd = true;
 unsigned long zeroCalibrationStartTimeMS;
 // values to run initial "calibration"
-bool initalCalibrartion = true;
+bool initalCalibration = true;
 unsigned long initalCalibrationStartTimeMS;
 
 // different operating modes
@@ -98,7 +98,7 @@ void colorWipe(uint32_t color, int wait);
 void loadingAnimation(uint8_t percent);
 
 // interrupt for zero calibration
-ICACHE_RAM_ATTR void detectZerocCalibrationButtonPush() {
+ICACHE_RAM_ATTR void detectZeroCalibrationButtonPush() {
   Serial.println("DEBUG: Interrupt");
   currentApplicationMode = MODE_ZERO_CALIBRATION;
   zeroCalibrationStartTimeMS = millis();
@@ -128,7 +128,7 @@ void setup() {
   pinMode(CONF_ZERO_CALIBRATION_PIN, INPUT_PULLUP);
   attachInterrupt(
     digitalPinToInterrupt(CONF_ZERO_CALIBRATION_PIN), 
-    detectZerocCalibrationButtonPush, 
+    detectZeroCalibrationButtonPush, 
     RISING
   );
 
@@ -216,14 +216,14 @@ void loop() {
         Serial.print("Zero calibration in progress: ");
         Serial.print((now - zeroCalibrationStartTimeMS)/1000);
         Serial.print("/");
-        Serial.print(CONF_ZEREO_CALIBRATION_TIME_MS/1000);
+        Serial.print(CONF_ZERO_CALIBRATION_TIME_MS/1000);
         Serial.println("s");
         delay(10);
       }
       // update neopixels every second
       if (now % 1000 == 0) {
         loadingAnimation(
-          map((now - zeroCalibrationStartTimeMS), 0, CONF_ZEREO_CALIBRATION_TIME_MS, 0, 100)
+          map((now - zeroCalibrationStartTimeMS), 0, CONF_ZERO_CALIBRATION_TIME_MS, 0, 100)
         );
       }
     }
