@@ -78,13 +78,20 @@ static const char alphanum[] ="0123456789"
                               "abcdefghijklmnopqrstuvwxyz";  // For random generation of client ID.
 
 // values to start "zero calibration"
-bool runZeroCalibration = false;
-bool sendZeroCalibrationCmd = false;
+bool sendZeroCalibrationCmd = true;
 unsigned long zeroCalibrationStartTimeMS;
 // values to run initial "calibration"
 bool initalCalibrartion = true;
 unsigned long initalCalibrationStartTimeMS;
 
+// different operating modes
+enum APPLICATION_MODE {
+  MODE_INITIALIZATION,      // initialization
+  MODE_ZERO_CALIBRATION,    // zero calibration
+  MODE_MEASUREMENT          // default: do measurement
+};
+
+uint8_t currentApplicationMode = MODE_INITIALIZATION;
 
 // change color of NeoPixels
 void colorWipe(uint32_t color, int wait);
@@ -93,9 +100,7 @@ void loadingAnimation(uint8_t percent);
 // interrupt for zero calibration
 ICACHE_RAM_ATTR void detectZerocCalibrationButtonPush() {
   Serial.println("DEBUG: Inerrupt");
-  initalCalibrartion = false;
-  runZeroCalibration = true;
-  sendZeroCalibrationCmd = true;
+  currentApplicationMode = MODE_ZERO_CALIBRATION;
   zeroCalibrationStartTimeMS = millis();
 }
 
@@ -171,43 +176,61 @@ void loop() {
     }
   }
 
-  // inital calibration (power on) and not zereo calibration triggered
-  if ((initalCalibrartion && !runZeroCalibration) && (now - initalCalibrationStartTimeMS < CONF_WARMUP_TIME_MS)) {
-    if (now % 1000 == 0) {
-      // NOTE: may use Serial.printf()
-      Serial.print("Initial calibration in progress: ");
-      Serial.print((now - initalCalibrationStartTimeMS)/1000);
-      Serial.print("/");
-      Serial.print(CONF_WARMUP_TIME_MS/1000);
-      Serial.println("s");
-      loadingAnimation(map((now - initalCalibrationStartTimeMS), 0, CONF_WARMUP_TIME_MS, 0, 100));
-      delay(10);
+  switch (currentApplicationMode) {
+  case MODE_INITIALIZATION:
+    // may move into function
+    if (now - initalCalibrationStartTimeMS < CONF_WARMUP_TIME_MS) {
+      if (now % 1000 == 0) {
+        // NOTE: may use Serial.printf()
+        Serial.print("Initial calibration in progress: ");
+        Serial.print((now - initalCalibrationStartTimeMS)/1000);
+        Serial.print("/");
+        Serial.print(CONF_WARMUP_TIME_MS/1000);
+        Serial.println("s");
+        loadingAnimation(map((now - initalCalibrationStartTimeMS), 0, CONF_WARMUP_TIME_MS, 0, 100));
+        delay(10);
+      }
     }
-  }
-  // no inital calibration but zero calibration 
-  else if ((!initalCalibrartion && runZeroCalibration) && (now - zeroCalibrationStartTimeMS < CONF_ZEREO_CALIBRATION_TIME_MS)) {
-    if (sendZeroCalibrationCmd) {
-      colorWipe(neoPixels.Color(0,0,0), 100);
-      Serial.println("Start zero calibration progress.");
-      mhz19Sensor.calibrateZero();
-      sendZeroCalibrationCmd = false;
-
+    // change mode to measurement
+    else {
+      currentApplicationMode = MODE_MEASUREMENT;
     }
-    if (now % 10000 == 0) {
-      // NOTE: may use Serial.printf()
-      Serial.print("Zero calibration in progress: ");
-      Serial.print((now - zeroCalibrationStartTimeMS)/1000);
-      Serial.print("/");
-      Serial.print(CONF_ZEREO_CALIBRATION_TIME_MS/1000);
-      Serial.println("s");
-      delay(10);
+    break;
+  case MODE_ZERO_CALIBRATION:
+    // may move into function
+    if (now - initalCalibrationStartTimeMS < CONF_WARMUP_TIME_MS) {
+      // send zero calibration command to sensor
+      if (sendZeroCalibrationCmd) {
+        colorWipe(neoPixels.Color(0,0,0), 100);
+        Serial.println("Start zero calibration progress.");
+        mhz19Sensor.calibrateZero();
+        sendZeroCalibrationCmd = false;
+      }
+      // send status to serial
+      if (now % 10000 == 0) {
+        // NOTE: may use Serial.printf()
+        Serial.print("Zero calibration in progress: ");
+        Serial.print((now - zeroCalibrationStartTimeMS)/1000);
+        Serial.print("/");
+        Serial.print(CONF_ZEREO_CALIBRATION_TIME_MS/1000);
+        Serial.println("s");
+        delay(10);
+      }
+      // update neopixels every second
+      if (now % 1000 == 0) {
+        loadingAnimation(map((now - zeroCalibrationStartTimeMS), 0, CONF_ZEREO_CALIBRATION_TIME_MS, 0, 100));
+      }
     }
-    if (now % 1000 == 0) {
-      loadingAnimation(map((now - zeroCalibrationStartTimeMS), 0, CONF_ZEREO_CALIBRATION_TIME_MS, 0, 100));
+    // zero calibration is done -> measurment mode
+    else {
+      currentApplicationMode = MODE_MEASUREMENT;
+      // set send flag to true if we change again back to zero calibration mode
+      sendZeroCalibrationCmd = true;
     }
-  }
-  // default measurement
-  else {
+    break;
+  // default mode is measurement
+  case MODE_MEASUREMENT:
+  default:
     if (now % CONF_MEASUREMENT_INTERVALL_MS == 0) {
       int co2Value = mhz19Sensor.getCO2();
       float temperature = mhz19Sensor.getTemperature();
@@ -238,11 +261,7 @@ void loop() {
 
       delay(10);
     }
-  }
-
-  // reset zereo calibration flag
-  if ((!initalCalibrartion && runZeroCalibration) && (now - zeroCalibrationStartTimeMS > CONF_ZEREO_CALIBRATION_TIME_MS)) {
-    runZeroCalibration = false;
+    break;
   }
 }
 
