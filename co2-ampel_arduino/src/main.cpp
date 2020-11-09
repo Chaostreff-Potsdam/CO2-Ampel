@@ -99,7 +99,7 @@ void loadingAnimation(uint8_t percent);
 
 // interrupt for zero calibration
 ICACHE_RAM_ATTR void detectZerocCalibrationButtonPush() {
-  Serial.println("DEBUG: Inerrupt");
+  Serial.println("DEBUG: Interrupt");
   currentApplicationMode = MODE_ZERO_CALIBRATION;
   zeroCalibrationStartTimeMS = millis();
 }
@@ -113,13 +113,13 @@ void setup() {
   mhz19Serial.begin(MHZ19_BAUDRATE);
 
   // MHZ19 init
-  Serial.println("Setup: Initializate MH-Z19 sensor");
+  Serial.println("Setup: Initializing MH-Z19 sensor");
   mhz19Sensor.begin(mhz19Serial);
   // enable auto calibration (lowest value in 24h as baseline for 400ppm)
   mhz19Sensor.autoCalibration();
 
   // NeoPixel init
-  Serial.println("Setup: Initializate NeoPixels");
+  Serial.println("Setup: Initializing NeoPixels");
   neoPixels.begin();  // init
   neoPixels.show();   // off
   neoPixels.setBrightness(NEOPIXEL_BRIGHTNESS);
@@ -221,7 +221,7 @@ void loop() {
         loadingAnimation(map((now - zeroCalibrationStartTimeMS), 0, CONF_ZEREO_CALIBRATION_TIME_MS, 0, 100));
       }
     }
-    // zero calibration is done -> measurment mode
+    // zero calibration is done -> measurement mode
     else {
       currentApplicationMode = MODE_MEASUREMENT;
       // set send flag to true if we change again back to zero calibration mode
