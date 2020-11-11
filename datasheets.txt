@@ -1,1 +1,3 @@
 MH-Z19 - https://www.winsen-sensor.com/d/files/MH-Z19B.pdf
+
+LoRa-Shield - https://github.com/TheNitek/WeMos-Lora/
