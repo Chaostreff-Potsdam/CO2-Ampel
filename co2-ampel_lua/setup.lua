@@ -17,7 +17,7 @@ local function wifi_wait_ip()
     print("MAC address is: " .. wifi.ap.getmac())
     print("IP is "..wifi.sta.getip())
     print("====================================")
-    app.start()
+    mq.start()
   end
 end
 
@@ -53,7 +53,9 @@ local function wifi_got_ip_event(T)
   print("Wifi connection is ready! IP address is: "..T.IP)
   print("Startup will resume momentarily, you have 3 seconds to abort.")
   print("Waiting...") 
-  -- tmr.create():alarm(3000, tmr.ALARM_SINGLE, startup)
+  tmr3 = tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
+    mq.start()
+  end)
 end
 
 local function wifi_disconnect_event(T)
@@ -91,12 +93,12 @@ end
 function module.start()
   print("Configuring Wifi ...")
   -- Register WiFi Station event callbacks
-  -- wifi.eventmon.register(wifi.eventmon.STA_CONNECTED, wifi_connect_event)
-  -- wifi.eventmon.register(wifi.eventmon.STA_GOT_IP, wifi_got_ip_event)
-  -- wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, wifi_disconnect_event)
+  wifi.eventmon.register(wifi.eventmon.STA_CONNECTED, wifi_connect_event)
+  wifi.eventmon.register(wifi.eventmon.STA_GOT_IP, wifi_got_ip_event)
+  wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, wifi_disconnect_event)
   
-  wifi.setmode(wifi.STATION);
-  wifi.sta.getap(wifi_start);
+  --wifi.setmode(wifi.STATION);
+  --wifi.sta.getap(wifi_start);
 end
 
 return module
