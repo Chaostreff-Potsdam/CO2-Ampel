@@ -56,7 +56,7 @@ local function mhz19InterruptHandler(level, timestamp)
     else
         lowDuration = timestamp - lastTimestamp
         co2 = mhz19_calculate_value(highDuration, lowDuration)
-        table.insert(latestMeasurements, co2)
+        --table.insert(latestMeasurements, co2)
         -- print(co2)
     end
     lastTimestamp = timestamp
