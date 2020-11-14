@@ -1,26 +1,20 @@
-local module = {}
-
-print("Load EUS")
-
+module = {}
+-- Starts the portal to choose the wi-fi router to which we have
+-- to associate
 function module.start()
-print("start_eus")
-    --wifi.setmode(wifi.STATIONAP)
-    --wifi.ap.config({ssid="CO2_Ampel", auth=wifi.OPEN})
-
-print("Wifi device_name: " .. p.device_name)
-    enduser_setup.manual(false)
+    wifi.sta.disconnect()
+    wifi.setmode(wifi.STATIONAP)
+    --ESP SSID generated wiht its chipid
+    wifi.ap.config({ssid="CO2Ampel-"..node.chipid()
+    , auth=wifi.OPEN})
+    print("Start EUS")
+    enduser_setup.manual(true)
     enduser_setup.start(
       function()
-        print("Connected to WiFi as:" .. wifi.sta.getip())
-        -- now use the parameters in the Lua table
-        module.p = dofile('eus_params.lua')
-
+        print("Connected to wifi as:" .. wifi.sta.getip())
       end,
       function(err, str)
         print("enduser_setup: Err #" .. err .. ": " .. str)
       end
-    )
+    );
 end
-
-return module
---FileView done.
