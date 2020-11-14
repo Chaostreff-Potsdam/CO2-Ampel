@@ -1,6 +1,7 @@
 local module = {}
 print("Load MQTT")
 m = nil
+local i = 0
 
 -- Sends a simple ping to the broker
 local function mqtt_send_ping()
@@ -11,12 +12,15 @@ local function mqtt_send_ping()
     
     -- m:publish(config.MQTT.ENDPOINT .. "id", config.MQTT.ID,0,0)
     val = co2 or "null"
-    m:publish(config.MQTT.ENDPOINT, "{ \"ppmCO2\": " .. val .. " }",0,0)
+    i = i+1
+    local mqtt_message = "{ \n\"ppmCO2\": " .. val .. "\n\"pnr\": ".. i .. " \n}"
+    m:publish(config.MQTT.ENDPOINT, mqtt_message,0,0)
     -- m:publish(config.MQTT.ENDPOINT .. "value/maxday", maxvalDay or "null",0,0)
     -- m:publish(config.MQTT.ENDPOINT .. "value/maxhour", maxvalHour or "null",0,0)
     -- m:publish(config.MQTT.ENDPOINT .. "unit", "ppm",0,0)
     -- m:publish(config.MQTT.ENDPOINT .. "rssi", rssi,0,0)
-    print("id:", config.MQTT.ID, "; rssi:", rssi, "dBm; CO2 value:", val,"ppm")
+--    print("id:", config.MQTT.ID, "; rssi:", rssi, "dBm; CO2 value:", val,"ppm")
+    print("mqtt: " .. mqtt_message)
 end
 
 -- Sends my id to the broker for registration
@@ -76,3 +80,4 @@ mqtt_start()
 end
 
 return module
+
