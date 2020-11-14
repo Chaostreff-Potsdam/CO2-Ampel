@@ -32,7 +32,7 @@ end
 
 local function mhz19_calculate_value(highDuration, lowDuration)
     val = config.HW.MZZ19_MAX * (1002.0 * highDuration - 2.0 * lowDuration) / 1000.0 / (highDuration + lowDuration);
-    print("{ \"ppmCO2\":" .. val .. " }")
+    print("{ \"ppmCO2\": " .. val .. " }")
     return val
 end
 
