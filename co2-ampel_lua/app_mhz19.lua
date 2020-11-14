@@ -32,7 +32,7 @@ end
 
 local function mhz19_calculate_value(highDuration, lowDuration)
     val = config.HW.MZZ19_MAX * (1002.0 * highDuration - 2.0 * lowDuration) / 1000.0 / (highDuration + lowDuration);
-    -- print(val)
+    print("{ \"ppmCO2\":" .. val .. " }")
     return val
 end
 
@@ -51,13 +51,18 @@ local function mhz19_median_value()
 end
 
 local function mhz19InterruptHandler(level, timestamp)
+--print(timestamp .. "-" .. lastTimestamp)
     if (level == gpio.LOW) then
         highDuration = timestamp - lastTimestamp
     else
-        lowDuration = timestamp - lastTimestamp
-        co2 = mhz19_calculate_value(highDuration, lowDuration)
-        --table.insert(latestMeasurements, co2)
-        -- print(co2)
+        if (lastTimestamp == 0) then
+            co2 = nil
+        else
+            lowDuration = timestamp - lastTimestamp
+            co2 = mhz19_calculate_value(highDuration, lowDuration)
+            --table.insert(latestMeasurements, co2)
+            -- print(co2)
+        end
     end
     lastTimestamp = timestamp
 end
@@ -128,7 +133,7 @@ function module.start()
     -- configure reading MH-Z19
     if (reset_reason == 0 or reset_reason == 6) then
       print("Warming up sensor...")
-      tmr5:alarm(1200, tmr.ALARM_SINGLE, mhz19_attach_interrupt)
+      tmr5:alarm(2000, tmr.ALARM_SINGLE, mhz19_attach_interrupt)
       tmr4:alarm(200, tmr.ALARM_AUTO, wemos_d1_toggle_led)
     else
       print("Starting sensor...")
