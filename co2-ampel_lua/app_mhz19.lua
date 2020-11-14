@@ -59,8 +59,12 @@ local function mhz19InterruptHandler(level, timestamp)
             co2 = nil
         else
             lowDuration = timestamp - lastTimestamp
-            co2 = mhz19_calculate_value(highDuration, lowDuration)
-            --table.insert(latestMeasurements, co2)
+            local new = mhz19_calculate_value(highDuration, lowDuration)
+            table.insert(latestMeasurements, new)
+            if (#latestMeasurements > 4) then
+                co2 = mhz19_median_value()
+            end
+            -- print(#latestMeasurements)
             -- print(co2)
         end
     end
