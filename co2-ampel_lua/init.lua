@@ -3,8 +3,8 @@ app    = require("app_mhz19")
 config = require("config")
 setup  = require("setup")
 mq     = require("mqtt_module")
+led    = require("rgbw_module")
 
 app.start()
+led.start()
 setup.start()
-
-
