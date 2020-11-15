@@ -26,4 +26,5 @@ serial to usb converter.
 
 # NodeMCU-Modules:
 adc,bme680,dht,enduser_setup,file,gpio,mqtt,net,node,sjson,softuart,tmr,uart,websocket,wifi,ws2812,ws2812_effects
+adc,bme680,dht,enduser_setup,file,gpio,http,mqtt,net,node,softuart,tmr,uart,websocket,wifi,ws2812
 
