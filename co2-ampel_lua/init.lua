@@ -1,10 +1,15 @@
-eus    = require("enduser_setup")
-app    = require("app_mhz19")
-config = require("config")
-setup  = require("setup")
-mq     = require("mqtt_module")
-led    = require("rgbw_module")
+if file.exists("eus_params.lua") then
+    app    = require("app_mhz19")
+    config = require("config")
+    setup  = require("setup")
+    mq     = require("mqtt_module")
+    led    = require("rgbw_module")
 
-app.start()
-led.start()
-setup.start()
+    app.start()
+    led.start()
+    setup.start()
+else
+    eus    = require("eus")
+    eus.start()
+end
+
