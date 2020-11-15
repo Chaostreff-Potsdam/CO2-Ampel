@@ -18,3 +18,9 @@ function module.start()
       end
     );
 end
+
+function module.stop()
+    enduser_setup.stop()
+end
+
+return module
