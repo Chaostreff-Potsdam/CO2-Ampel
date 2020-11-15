@@ -18,7 +18,9 @@ tmr5 = tmr.create()
 tmr6 = tmr.create()
 
 co2 = 0
+
 local latestMeasurements = {}
+co2_median = 0
 
 local function wemos_d1_toggle_led()
     led_state = not led_state
@@ -59,11 +61,11 @@ local function mhz19InterruptHandler(level, timestamp)
         else
             lowDuration = timestamp - lastTimestamp
             co2 = mhz19_calculate_value(highDuration, lowDuration)
---            local new = mhz19_calculate_value(highDuration, lowDuration)
-  --          table.insert(latestMeasurements, new)
-    --        if (#latestMeasurements > 4) then
-      --          co2 = mhz19_median_value()
-        --    end
+            local new = mhz19_calculate_value(highDuration, lowDuration)
+            table.insert(latestMeasurements, new)
+            if (#latestMeasurements > 4) then
+                co2_median = mhz19_median_value()
+            end
             -- print(#latestMeasurements)
             -- print(co2)
         end
