@@ -13,7 +13,7 @@ local function mqtt_send_ping()
     -- m:publish(config.MQTT.ENDPOINT .. "id", config.MQTT.ID,0,0)
     val = co2 or "null"
     i = i+1
-    local mqtt_message = "{ \n\"ppmCO2\": " .. val .. "\n\"pnr\": ".. i .. " \n\"uptime\": ".. tmr.time() .. " \n}"
+    local mqtt_message = "{ \n\"ppmCO2\": " .. val .. " ,\n\"pnr\": ".. i .. " ,\n\"uptime\": ".. tmr.time() .. " \n}"
     m:publish(config.MQTT.ENDPOINT, mqtt_message,0,0)
     -- m:publish(config.MQTT.ENDPOINT .. "value/maxday", maxvalDay or "null",0,0)
     -- m:publish(config.MQTT.ENDPOINT .. "value/maxhour", maxvalHour or "null",0,0)
