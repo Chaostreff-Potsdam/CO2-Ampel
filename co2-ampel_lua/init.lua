@@ -11,5 +11,12 @@ if file.exists("eus_params.lua") then
 else
     eus    = require("eus")
     eus.start()
+ 
+    app    = require("app_mhz19")
+    config = require("config")
+    led    = require("rgbw_module")
+
+    app.start()
+    led.start()
 end
 
