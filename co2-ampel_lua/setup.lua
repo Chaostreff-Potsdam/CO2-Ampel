@@ -85,7 +85,8 @@ local function wifi_disconnect_event(T)
     print("Retrying connection...(attempt "..(disconnect_ct+1).." of "..total_tries..")")
   else
     wifi.sta.disconnect()
-    print("Aborting connection to AP!")
+    eus.start()
+print("Aborting connection to AP!")
     disconnect_ct = nil  
   end
 end
