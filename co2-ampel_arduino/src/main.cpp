@@ -39,7 +39,7 @@
 
 // application configuration
 #define CONF_WARMUP_TIME_MS             180000  // 180s
-#define CONF_ZERO_CALIBRATION_TIME_MS  1260000 // 21m
+#define CONF_ZERO_CALIBRATION_TIME_MS   1260000 // 21m
 #define CONF_MEASUREMENT_INTERVALL_MS   10000   // 10s
 #define CONF_ZERO_CALIBRATION_PIN       D3
 
