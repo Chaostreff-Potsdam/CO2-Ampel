@@ -1,8 +1,5 @@
 # CO2 Traffic Light
 
-> :warning: Please also see `refactoring-arduino` branch. I have no hardware at
-hand to test the implementation of the refactoring branch.
-
 This code uses the Arduino framework for the ESP8266. To build and flash the
 firmware use [PlatformIO](https://platformio.org/). It should handle the
 dependencies.
