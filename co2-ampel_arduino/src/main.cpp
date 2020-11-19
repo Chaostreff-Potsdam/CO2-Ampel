@@ -97,6 +97,9 @@ uint8_t currentApplicationMode = MODE_INITIALIZATION;
 void colorWipe(uint32_t color, int wait);
 void loadingAnimation(uint8_t percent);
 
+// check sensor and force reboot
+void checkSensorReturnCode();
+
 // interrupt for zero calibration
 ICACHE_RAM_ATTR void detectZeroCalibrationButtonPush() {
   Serial.println("DEBUG: Interrupt");
@@ -131,6 +134,8 @@ void setup() {
     detectZeroCalibrationButtonPush, 
     RISING
   );
+
+  checkSensorReturnCode();
 
   // WiFi
   Serial.printf("Setup: WiFi connecting to %s\n\r", WIFI_CONFIG_SSID);
@@ -241,6 +246,8 @@ void loop() {
       int co2Value = mhz19Sensor.getCO2();
       float temperature = mhz19Sensor.getTemperature();
 
+      checkSensorReturnCode();
+
       Serial.printf("CO2 [ppm]: %4i Temperature [C]: %.0f\n\r", co2Value, temperature);
 
       if (co2Value <= CO2_THRESHOLD_GOOD) {
@@ -300,5 +307,19 @@ void loadingAnimation(uint8_t percent) {
       neoPixels.setPixelColor(num_pixel_on, neoPixels.Color(k, k, k));
       neoPixels.show();
     }
+  }
+}
+
+void checkSensorReturnCode() {
+  if (mhz19Sensor.errorCode != RESULT_OK) {
+    Serial.println("FAILED TO READ SENSOR!");
+    Serial.printf("Error code: %d\n\r", mhz19Sensor.errorCode);
+    for (uint8_t i=0; i<10; i++) {
+      colorWipe(neoPixels.Color(0, 255, 255), 50);
+      delay(500);
+      colorWipe(neoPixels.Color(0,0,0), 50);
+      delay(500);
+    }
+    ESP.reset();
   }
 }
