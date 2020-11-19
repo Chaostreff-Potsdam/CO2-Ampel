@@ -35,7 +35,7 @@
 // NeoPixel configuration
 #define NEOPIXEL_COUNT      12
 #define NEOPIXEL_PIN        D5
-#define NEOPIXEL_BRIGHTNESS 128   // 255 max
+#define NEOPIXEL_BRIGHTNESS 255   // 255 max
 
 // application configuration
 #define CONF_WARMUP_TIME_MS             180000  // 180s
