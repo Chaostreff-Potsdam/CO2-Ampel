@@ -35,4 +35,4 @@ should be set accordingly.
 
 - [ ] print config on serial
 - [ ] capative portal (wifi configuration)
-- [ ] show values on capative portal / website
+- [x] show values on capative portal / website
