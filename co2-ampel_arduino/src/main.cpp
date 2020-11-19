@@ -314,7 +314,7 @@ void checkSensorReturnCode() {
   if (mhz19Sensor.errorCode != RESULT_OK) {
     Serial.println("FAILED TO READ SENSOR!");
     Serial.printf("Error code: %d\n\r", mhz19Sensor.errorCode);
-    for (uint8_t i=0; i<10; i++) {
+    for (uint8_t i=0; i<2; i++) {
       colorWipe(neoPixels.Color(0, 255, 255), 50);
       delay(500);
       colorWipe(neoPixels.Color(0,0,0), 50);
