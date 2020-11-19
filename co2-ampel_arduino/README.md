@@ -33,3 +33,9 @@ Pin configuration can be changed in the [src/main.cpp](src/main.cpp).
 
 Instead of a NeoPixel ring a compatible strip can be used. The number of LEDs
 should be set accordingly.
+
+## TODO
+
+- [ ] print config on serial
+- [ ] capative portal (wifi configuration)
+- [ ] show values on capative portal / website
