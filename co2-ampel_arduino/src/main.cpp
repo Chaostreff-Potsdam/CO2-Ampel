@@ -12,9 +12,13 @@
 // WIFi
 #include <ESP8266WiFi.h>
 
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+
 // PubSub MQTT Lib
 #include <PubSubClient.h>
 
+#include <DNSServer.h>
 
 // WiFi config
 #include <wifi_config.h>
@@ -107,6 +111,89 @@ ICACHE_RAM_ATTR void detectZeroCalibrationButtonPush() {
   zeroCalibrationStartTimeMS = millis();
 }
 
+DNSServer dnsServer;
+AsyncWebServer server(80);
+
+int co2Value;
+float temperature;
+
+class CaptiveRequestHandler : public AsyncWebHandler {
+public:
+  CaptiveRequestHandler() {}
+  virtual ~CaptiveRequestHandler() {}
+
+  bool canHandle(AsyncWebServerRequest *request){
+    //request->addInterestingHeader("ANY");
+    return true;
+  }
+
+  void handleRequest(AsyncWebServerRequest *request) {
+    unsigned long now = millis();
+    long refreshtime;
+    switch (currentApplicationMode) {
+    case MODE_INITIALIZATION:
+      refreshtime = 2000;
+      break;
+    case MODE_ZERO_CALIBRATION:
+      refreshtime = 10000;
+    default:
+      refreshtime = 30000;
+      break;
+    }
+
+    AsyncResponseStream *response = request->beginResponseStream("text/html");
+    response->print("<!doctype html><html lang=\"de\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>CO2-Ampel-");
+    response->print(ESP.getChipId());
+    response->print("</title><style>");
+    response->print("body {font-family: Arial, Helvetica, sans-serif;color: #333;text-align: center;}");
+    response->print("body > hr {opacity: 50%;}");
+    response->print(".light-gray {color:#000;background-color:#f1f1f1;}");
+    response->print(".gray {color:#000;background-color:#9e9e9e;}");
+    response->print(".good {color: darkgreen;}");
+    response->print(".medium {color: darkorange;font-weight: bold;}");
+    response->print(".bad {color: darkred;font-weight: bolder;}</style></head>");
+    response->print("<body onLoad=\"timeRefresh(");
+    response->print(refreshtime);
+    response->print(")\">");
+    response->print("<h1>CO2-Ampel</h1><hr>");
+    switch (currentApplicationMode) {
+    case MODE_INITIALIZATION:
+      response->print("<p>Initizalisiere Sensor</p><div class=\"light-gray\"><div class=\"gray\" style=\"height:24px;width:");
+      response->print(map((now - initalCalibrationStartTimeMS), 0, CONF_WARMUP_TIME_MS, 0, 100));
+      response->print("%\"></div></div>");
+      break;
+    case MODE_ZERO_CALIBRATION:
+      response->print("<p>Zero calibration ... </p><div class=\"light-gray\"><div class=\"gray\" style=\"height:24px;width:");
+      response->print(map((now - zeroCalibrationStartTimeMS), 0, CONF_ZERO_CALIBRATION_TIME_MS, 0, 100));
+      response->print("%\"></div></div>");
+      break;
+    case MODE_MEASUREMENT:
+    default:
+      response->print("<p class=\"");
+      if (co2Value <= CO2_THRESHOLD_GOOD || (co2Value > CO2_THRESHOLD_GOOD) && (co2Value <= CO2_THRESHOLD_MEDIUM)) {
+        response->print("good");
+      }
+      else if ((co2Value > CO2_THRESHOLD_MEDIUM) && (co2Value <= CO2_THRESHOLD_BAD)) {
+        response->print("medium");
+      }
+      else if (co2Value > CO2_THRESHOLD_BAD) {
+        response->print("bad");
+      }
+      if (co2Value <= CO2_THRESHOLD_GOOD) {
+        response->print("good");
+      }
+      response->print("\">CO2: ");
+      response->print(co2Value);
+      response->print("ppm</p><p>Temperature: ");
+      response->print(temperature);
+      response->print("°C</p>");
+      break;
+    }
+    response->print("<script>function timeRefresh(time) {setTimeout(\"location.reload(true);\", time);}</script></body></html>");
+    request->send(response);
+  }
+};
+
 void setup() {
   // Setup serial for output
   Serial.begin(9600);
@@ -138,19 +225,24 @@ void setup() {
   checkSensorReturnCode();
 
   // WiFi
-  Serial.printf("Setup: WiFi connecting to %s\n\r", WIFI_CONFIG_SSID);
-  #ifndef WIFI_CONFIG_PASSWORD
-  WiFi.begin(WIFI_CONFIG_SSID);
-  #else
-  WiFi.begin(WIFI_CONFIG_SSID, WIFI_CONFIG_PASSWORD);
-  #endif
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println();
-  Serial.print("Connected, IP: ");
-  Serial.println(WiFi.localIP());
+  // Serial.printf("Setup: WiFi connecting to %s\n\r", WIFI_CONFIG_SSID);
+  // #ifndef WIFI_CONFIG_PASSWORD
+  // WiFi.begin(WIFI_CONFIG_SSID);
+  // #else
+  // WiFi.begin(WIFI_CONFIG_SSID, WIFI_CONFIG_PASSWORD);
+  // #endif
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   delay(500);
+  //   Serial.print(".");
+  // }
+  // Serial.println();
+  // Serial.print("Connected, IP: ");
+  // Serial.println(WiFi.localIP());
+  String ap_name = String("CO2-Ampel-" + String(ESP.getChipId()));
+  WiFi.softAP(ap_name.c_str());
+  dnsServer.start(53, "*", WiFi.softAPIP());
+  server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);
+  server.begin();
 
   mqttClient.setServer(MQTT_CONFIG_SERVER, 1883);
 
@@ -161,6 +253,7 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
+  dnsServer.processNextRequest();
   // mqtt
   // c&p: https://de.mathworks.com/help/thingspeak/use-arduino-client-to-publish-to-a-channel.html
   if (!mqttClient.connected()) {
@@ -243,8 +336,8 @@ void loop() {
   case MODE_MEASUREMENT:
   default:
     if (now % CONF_MEASUREMENT_INTERVALL_MS == 0) {
-      int co2Value = mhz19Sensor.getCO2();
-      float temperature = mhz19Sensor.getTemperature();
+      co2Value = mhz19Sensor.getCO2();
+      temperature = mhz19Sensor.getTemperature();
 
       checkSensorReturnCode();
 
