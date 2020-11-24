@@ -115,7 +115,6 @@ void checkSensorReturnCode() {
             colorWipe(neoPixels.Color(0,0,0), 50);
             delay(500);
         }
-        ESP.reset();
     }
 }
 
