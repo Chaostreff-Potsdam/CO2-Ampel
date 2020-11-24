@@ -39,17 +39,13 @@
 
 // application configuration
 #define CONF_WARMUP_TIME_MS             180000  // 180s
-#define CONF_ZERO_CALIBRATION_TIME_MS   1260000 // 21m
+#define CONF_ZERO_CALIBRATION_TIME_MS  1260000 // 21m
 #define CONF_MEASUREMENT_INTERVALL_MS   10000   // 10s
 #define CONF_ZERO_CALIBRATION_PIN       D3
 
 
-// raise error if values not set
 #ifndef WIFI_CONFIG_H
 #error Include a valid wifi_config.h
-#endif
-#ifndef WIFI_CONFIG_SSID
-#error WIFI_CONFIG_SSID must be defined
 #endif
 
 #ifndef MQTT_CONFIG_H
@@ -83,6 +79,11 @@ unsigned long zeroCalibrationStartTimeMS;
 // values to run initial "calibration"
 bool initalCalibration = true;
 unsigned long initalCalibrationStartTimeMS;
+// Assume Wifi does not work, if connect set to true
+bool wifiConnectionActive = false;
+// Assume Mqtt to Work until proven wrong
+bool attemptMqttConnect = true;
+bool mqttConnectionActive = true;
 
 // different operating modes
 enum APPLICATION_MODE {
@@ -97,14 +98,25 @@ uint8_t currentApplicationMode = MODE_INITIALIZATION;
 void colorWipe(uint32_t color, int wait);
 void loadingAnimation(uint8_t percent);
 
-// check sensor and force reboot
-void checkSensorReturnCode();
-
 // interrupt for zero calibration
 ICACHE_RAM_ATTR void detectZeroCalibrationButtonPush() {
   Serial.println("DEBUG: Interrupt");
   currentApplicationMode = MODE_ZERO_CALIBRATION;
   zeroCalibrationStartTimeMS = millis();
+}
+
+void checkSensorReturnCode() {
+    if (mhz19Sensor.errorCode != RESULT_OK) {
+        Serial.println("FAILED TO READ SENSOR!");
+        Serial.printf("Error code: %d\n\r", mhz19Sensor.errorCode);
+        for (uint8_t i=0; i<2; i++) {
+            colorWipe(neoPixels.Color(0, 255, 255), 50);
+            delay(500);
+            colorWipe(neoPixels.Color(0,0,0), 50);
+            delay(500);
+        }
+        ESP.reset();
+    }
 }
 
 void setup() {
@@ -138,19 +150,31 @@ void setup() {
   checkSensorReturnCode();
 
   // WiFi
-  Serial.printf("Setup: WiFi connecting to %s\n\r", WIFI_CONFIG_SSID);
-  #ifndef WIFI_CONFIG_PASSWORD
-  WiFi.begin(WIFI_CONFIG_SSID);
-  #else
-  WiFi.begin(WIFI_CONFIG_SSID, WIFI_CONFIG_PASSWORD);
-  #endif
-  while (WiFi.status() != WL_CONNECTED) {
+#ifdef WIFI_CONFIG_SSID
+    Serial.printf("Setup: WiFi connecting to %s\n\r", WIFI_CONFIG_SSID);
+    #ifndef WIFI_CONFIG_PASSWORD
+      WiFi.begin(WIFI_CONFIG_SSID);
+    #else
+      WiFi.begin(WIFI_CONFIG_SSID, WIFI_CONFIG_PASSWORD);
+    #endif
+  for (int i=0; i<20; i++) { //try 10s
+      if (WiFi.status() == WL_CONNECTED) break;
     delay(500);
     Serial.print(".");
   }
-  Serial.println();
-  Serial.print("Connected, IP: ");
-  Serial.println(WiFi.localIP());
+  if (WiFi.status() == WL_CONNECTED) {
+      Serial.println();
+      Serial.print("Connected, IP: ");
+      Serial.println(WiFi.localIP());
+      wifiConnectionActive = true;
+  } else {
+      Serial.println("Could not Connect to Wifi");
+      wifiConnectionActive = false;
+  }
+#else
+  Serial.println("No Wifi Info Present, Light Only Mode");
+  wifiConnectionActive = false;
+#endif
 
   mqttClient.setServer(MQTT_CONFIG_SERVER, 1883);
 
@@ -161,26 +185,28 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  // mqtt
-  // c&p: https://de.mathworks.com/help/thingspeak/use-arduino-client-to-publish-to-a-channel.html
-  if (!mqttClient.connected()) {
+  if (wifiConnectionActive && attemptMqttConnect && !mqttClient.connected()) {
     char mqttClientID[9];
-    while (!mqttClient.connected()) {
+    //Attempt to Connect 10 times with growing intervals
+    for (int retries = 0; retries < 10; retries++) {
+
       // Generate mqttClientID
-      for (int i = 0; i < 8; i++) {
-          mqttClientID[i] = alphanum[random(51)];
-      }
+      for (int i = 0; i < 8; i++) mqttClientID[i] = alphanum[random(51)];
       mqttClientID[8]='\0';
 
       if (mqttClient.connect(mqttClientID, MQTT_CONFIG_USER, MQTT_CONFIG_PASS)) {
         Serial.println("MQTT: connected");
-      }
-      else {
-        Serial.print("failed, rc=");
+        mqttConnectionActive = true;
+        attemptMqttConnect = true;
+        retries=10; //break the loop instantly
+      } else {
+        Serial.println(retries);
         // Print reason the connection failed.
         // See https://pubsubclient.knolleary.net/api.html#state for the failure code explanation.
-        Serial.print(mqttClient.state());
-        delay(100);
+        Serial.print("failed, rc="); Serial.println(mqttClient.state());
+        mqttConnectionActive = false;
+        attemptMqttConnect = false;
+        delay(retries * 50);
       }      
     }
   }
@@ -263,18 +289,15 @@ void loop() {
         colorWipe(neoPixels.Color(  255, 0,   0), 200);
       }
 
-      String json = String(
-        "{ \"temperatur\": " 
-        + String(temperature, 0) 
-        + ", \"ppmCO2\": " 
-        + String(co2Value) + " }"
-      );
-      //Serial.println(json);
-      String topic = String("/co2ampel/" + String(ESP.getChipId()));
-      //Serial.println(topic);
-
-      if (mqttClient.publish(topic.c_str(), json.c_str())) {
-        Serial.println("Send OK");
+      //If We have Wifi and MQTT, send it
+      if (wifiConnectionActive && mqttConnectionActive) {
+        String json = String("{ \"temperatur\": " + String(temperature, 0) + ", \"ppmCO2\": " + String(co2Value) + " }");
+        //Serial.println(json);
+        String topic = String("/co2ampel/" + String(ESP.getChipId()));
+        //Serial.println(topic);
+        if (mqttClient.publish(topic.c_str(), json.c_str())) {
+          Serial.println("Send OK");
+        }
       }
 
       delay(10);
@@ -285,10 +308,10 @@ void loop() {
 
 
 void colorWipe(uint32_t color, int wait) {
-  for(int i=0; i<neoPixels.numPixels(); i++) { // For each pixel in strip...
-    neoPixels.setPixelColor(i, color);         //  Set pixel's color (in RAM)
-    neoPixels.show();                          //  Update strip to match
-    delay(wait);                           //  Pause for a moment
+  for(int i=0; i<neoPixels.numPixels(); i++) {
+    neoPixels.setPixelColor(i, color);
+    neoPixels.show();
+    delay(wait);
   }
 }
 
@@ -307,19 +330,5 @@ void loadingAnimation(uint8_t percent) {
       neoPixels.setPixelColor(num_pixel_on, neoPixels.Color(k, k, k));
       neoPixels.show();
     }
-  }
-}
-
-void checkSensorReturnCode() {
-  if (mhz19Sensor.errorCode != RESULT_OK) {
-    Serial.println("FAILED TO READ SENSOR!");
-    Serial.printf("Error code: %d\n\r", mhz19Sensor.errorCode);
-    for (uint8_t i=0; i<2; i++) {
-      colorWipe(neoPixels.Color(0, 255, 255), 50);
-      delay(500);
-      colorWipe(neoPixels.Color(0,0,0), 50);
-      delay(500);
-    }
-    ESP.reset();
   }
 }
