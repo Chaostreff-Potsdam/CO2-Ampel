@@ -61,8 +61,8 @@ local function mhz19InterruptHandler(level, timestamp)
         else
             lowDuration = timestamp - lastTimestamp
             co2 = mhz19_calculate_value(highDuration, lowDuration)
-            local new = mhz19_calculate_value(highDuration, lowDuration)
-            table.insert(latestMeasurements, new)
+            -- local new = mhz19_calculate_value(highDuration, lowDuration)
+            table.insert(latestMeasurements, co2)
             if (#latestMeasurements > 4) then
                 co2_median = mhz19_median_value()
             end
@@ -134,6 +134,11 @@ function module.start()
   gpio.mode(config.HW.LED_PIN, gpio.OUTPUT)
   gpio.write(config.HW.LED_PIN, gpio.HIGH)
   
+  -- configure Calibration
+  gpio.mode(config.HW.CAL_PIN, gpio.OUTPUT)
+  gpio.write(config.HW.CAL_PIN, gpio.HIGH)
+
+
   -- blink reset reason
 --  gpio.serout(config.HW.LED_PIN, gpio.LOW, {150000,50000},reset_reason+1, function()
     -- configure reading MH-Z19

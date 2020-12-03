@@ -11,7 +11,7 @@ local function mqtt_send_ping()
 --    local maxvalHour = app.mhz19_maxval_hour(median)
     
     -- m:publish(config.MQTT.ENDPOINT .. "id", config.MQTT.ID,0,0)
-    val = co2_median or "null"
+    val = co2 or "null"
     i = i+1
     local mqtt_message = "{ \n\"ppmCO2\": " .. val .. " ,\n\"pnr\": ".. i .. " ,\n\"uptime\": ".. tmr.time() .. " \n}"
     m:publish(config.MQTT.ENDPOINT, mqtt_message,0,0)
