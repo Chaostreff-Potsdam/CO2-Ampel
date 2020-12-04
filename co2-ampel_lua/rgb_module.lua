@@ -1,6 +1,6 @@
 module = {}
 
-print("Load RGBW")
+print("Load RGB")
 
 ws2812.init()
 
@@ -25,13 +25,14 @@ function round(a)
 end
 
 function led_set()
+    local led_val = co2_median
     local rd = 0
     local gn = 0
-    if (type(co2) == "number") then
-        if co2 < 800 then
+    if (type(led_val) == "number") then
+        if led_val < 800 then
             buff:mix(256, buffer_green)
-        elseif co2 < 1000 then
-            rd = math.ceil((co2 - 800) / 200 * 256)
+        elseif led_val < 1000 then
+            rd = math.ceil((led_val - 800) / 200 * 256)
             gn = 256 - rd
             buff:mix(gn, buffer_green, rd, buffer_red)
         else
@@ -39,13 +40,13 @@ function led_set()
         end
         
         for i = maxled,1,-1 do
-            if (i-1 > (co2 / 100)) then
+            if (i-1 > (led_val / 100)) then
                 buff:set(i, {0,0,0})
-            elseif (i > (co2 / 100)) then
-                ye = co2 % 100 / 100
-                if co2 < 800 then
+            elseif (i > (led_val / 100)) then
+                ye = led_val % 100 / 100
+                if led_val < 800 then
                     buff:set(i, {ye*bright, 0, 0})
-                elseif co2 < 1000 then
+                elseif led_val < 1000 then
                     buff:set(i, {ye*gn/256*bright, ye*rd/256*bright, 0})
                 else
                     buff:set(i, {0, ye*bright, 0})
